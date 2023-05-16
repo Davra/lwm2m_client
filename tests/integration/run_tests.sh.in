@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+#
+# Copyright 2017-2023 AVSystem <avsystem@avsystem.com>
+# AVSystem Anjay LwM2M SDK
+# All rights reserved.
+#
+# Licensed under the AVSystem-5-clause License.
+# See the attached LICENSE file for details.
+
+
+COMMAND="@CMAKE_CTEST_COMMAND@ -E sensitive";
+RERUNS=@TEST_RERUNS@;
+
+if [ "$1" == "-s" ]; then
+    COMMAND="@CMAKE_CTEST_COMMAND@ -R sensitive";
+    RERUNS=@TEST_SENSITIVE_RERUNS@;
+    if [ $RERUNS == 0 ]; then
+        $COMMAND --output-on-failure && exit 0;
+    else
+        $COMMAND && exit 0;
+    fi
+elif [ "$1" == "-h" ]; then
+    COMMAND="@CMAKE_CTEST_COMMAND@ -R hsm";
+    if [ $RERUNS == 0 ]; then
+        $COMMAND --output-on-failure && exit 0;
+    else
+        $COMMAND && exit 0;
+    fi
+else
+    if [ $RERUNS == 0 ]; then
+        $COMMAND -j@NPROC@ --output-on-failure && exit 0;
+    else
+        $COMMAND -j@NPROC@ && exit 0;
+    fi
+fi
+
+if [ $RERUNS -gt 0 ]; then
+    if  [ $RERUNS -gt 1 ]; then
+        for i in $(seq 1 $(($RERUNS-1))); do
+            $COMMAND --rerun-failed && exit 0;
+        done;
+    fi
+    $COMMAND --rerun-failed --output-on-failure && exit 0;
+fi
+
+exit 1

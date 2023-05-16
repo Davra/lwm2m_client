@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#
+# Copyright 2017-2023 AVSystem <avsystem@avsystem.com>
+# AVSystem CoAP library
+# All rights reserved.
+#
+# Licensed under the AVSystem-5-clause License.
+# See the attached LICENSE file for details.
+
+set -e
+
+if [[ -d '.git' ]]; then
+    git submodule update --init --recursive
+fi
+
+EXTRA_FLAGS=()
+
+rm -f CMakeCache.txt
+rm -rf CMakeFiles
+cmake -D CMAKE_BUILD_TYPE=Debug \
+      -D CMAKE_C_FLAGS="-Wall -Wextra -Wshadow -Winit-self -Wmissing-declarations -Wc++-compat -Wsign-conversion -Wconversion -Wcast-qual -Wvla -Wno-variadic-macros -Wno-long-long -Wjump-misses-init -Werror -Wno-error=deprecated-declarations" \
+      -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
+      -D WITH_INTERNAL_LOGS=ON \
+      -D WITH_INTERNAL_TRACE=ON \
+      -D AVS_LOG_WITH_TRACE=ON \
+      -D WITH_VALGRIND=ON \
+      -D WITH_TEST=ON \
+      -D WITH_POISONING=ON \
+      -D WITH_MBEDTLS=ON \
+      "${EXTRA_FLAGS[@]}" \
+      "$@" "$(dirname "$0")" &&
+make clean

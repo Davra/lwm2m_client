@@ -1,0 +1,94 @@
+{
+   getaddrinfo-globalstate
+   Memcheck:Leak
+   fun:malloc
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:gaih_inet*
+   fun:getaddrinfo
+}
+{
+   getaddrinfo-invalidfree
+   Memcheck:Free
+   fun:free
+   fun:__libc_freeres
+   ...
+   fun:exit
+}
+{
+   ssl_handshake-value
+   Memcheck:Value8
+   ...
+   obj:*/libssl.so.*
+   fun:ssl_handshake
+}
+{
+   ssl_handshake-cond
+   Memcheck:Cond
+   ...
+   obj:*/libssl.so.*
+   fun:ssl_handshake
+}
+{
+   libcrypto-value
+   Memcheck:Value8
+   obj:*/libcrypto.so.*
+}
+{
+   libssl-value
+   Memcheck:Value8
+   obj:*/libssl.so.*
+}
+{
+   libcrypto-cond
+   Memcheck:Cond
+   obj:*/libcrypto.so.*
+}
+{
+   libssl-cond
+   Memcheck:Cond
+   obj:*/libssl.so.*
+}
+{
+   sendto-argument
+   Memcheck:Param
+   socketcall.sendto(msg)
+   ...
+   fun:BIO_write
+   ...
+   fun:ssl_handshake
+}
+{
+    recv
+    Memcheck:Cond
+    obj:*/vgpreload_memcheck*
+    obj:*/libssl.so.*
+    ...
+    obj:*/libssl.so.*
+    fun:receive_ssl
+}
+{
+   engine-private-key
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:ENGINE_load_private_key
+   fun:_avs_crypto_openssl_engine_load_private_key
+}
+{
+   engine-cert
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:ENGINE_ctrl_cmd
+   fun:_avs_crypto_openssl_engine_load_certs
+}
+{
+   engine-new
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:ENGINE_new
+}

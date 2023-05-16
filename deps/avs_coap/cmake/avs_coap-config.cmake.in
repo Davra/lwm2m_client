@@ -1,0 +1,19 @@
+# Copyright 2017-2023 AVSystem <avsystem@avsystem.com>
+# AVSystem CoAP library
+# All rights reserved.
+#
+# Licensed under the AVSystem-5-clause License.
+# See the attached LICENSE file for details.
+
+set(AVS_COAP_VERSION "@AVS_COAP_VERSION@")
+
+if(NOT DEFINED avs_commons_DIR)
+    set(avs_commons_DIR "${CMAKE_CURRENT_LIST_DIR}/../avs_commons")
+endif()
+find_package(avs_commons REQUIRED COMPONENTS @AVS_COMMONS_REQUIRED_COMPONENTS@)
+
+@PACKAGE_INIT@
+
+check_required_components(avs_coap)
+
+include(${CMAKE_CURRENT_LIST_DIR}/avs_coap-targets.cmake)

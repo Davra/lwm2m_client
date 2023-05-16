@@ -1,0 +1,5 @@
+[FORMAT]
+max-line-length=120
+
+# allow TODO comments
+disable=fixme
