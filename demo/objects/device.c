@@ -325,7 +325,9 @@ static void perform_reboot(avs_sched_t *sched, const void *unused) {
 #endif
     {
         demo_log(INFO, "*** REBOOT ***");
-        execv(exe_path, argv_get());
+        system("shutdown --reboot now");
+        // This will not be reached
+        // execv(exe_path, argv_get());
     }
     demo_log(ERROR, "could not reboot");
 }
