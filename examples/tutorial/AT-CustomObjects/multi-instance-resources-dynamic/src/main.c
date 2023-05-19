@@ -77,12 +77,23 @@ int main(int argc, char *argv[]) {
         goto cleanup;
     }
 
+    const anjay_dm_object_def_t **atlas_copco_control_object = NULL;
+    if (!result) {
+        atlas_copco_control_object = atlas_copco_control_object_create();
+        if (atlas_copco_control_object) {
+            result = anjay_register_object(anjay, atlas_copco_control_object);
+        } else {
+            result = -1;
+        }
+    }
+
     result = anjay_event_loop_run(anjay,
                                   avs_time_duration_from_scalar(1, AVS_TIME_S));
 
 cleanup:
     anjay_delete(anjay);
     delete_test_object(test_object);
+    atlas_copco_control_object_release(atlas_copco_control_object);
 
     return result;
 }

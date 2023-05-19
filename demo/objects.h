@@ -126,6 +126,10 @@ int apn_conn_profile_get_instances(const anjay_dm_object_def_t **def,
                                    AVS_LIST(anjay_iid_t) *out);
 void apn_conn_profile_object_release(const anjay_dm_object_def_t **def);
 
+// Manual: Add Atlas Copco Object
+const anjay_dm_object_def_t **atlas_copco_control_object_create(void);
+void atlas_copco_control_object_release(const anjay_dm_object_def_t **def);
+
 AVS_LIST(anjay_iid_t)
 apn_conn_profile_list_activated(const anjay_dm_object_def_t **def);
 
