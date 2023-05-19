@@ -107,7 +107,7 @@ set(ANJAY_DEFAULT_SEND_FORMAT AVS_COAP_FORMAT_NONE CACHE STRING
 
 option(WITH_BOOTSTRAP "Enable LwM2M Bootstrap Interface support" ON)
 option(WITH_DOWNLOADER "Enable support for downloader API" ON)
-cmake_dependent_option(WITH_HTTP_DOWNLOAD "Enable support for HTTP(S) downloads" OFF "WITH_DOWNLOADER" OFF)
+cmake_dependent_option(WITH_HTTP_DOWNLOAD "Enable support for HTTP(S) downloads" ON "WITH_DOWNLOADER" OFF)
 option(WITH_LWM2M11 "Enable support for LwM2M 1.1" ON)
 # NOTE: WITH_EST is moved below due to dependencies
 
