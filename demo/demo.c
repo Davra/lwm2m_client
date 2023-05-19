@@ -563,6 +563,10 @@ static int demo_init(anjay_demo_t *demo, cmdline_args_t *cmdline_args) {
                               geopoints_get_instances,
                               geopoints_notify_time_dependent,
                               geopoints_object_release)
+            || install_object(demo, atlas_copco_control_object_create(),
+                              NULL,
+                              NULL,
+                              geopoints_object_release)
 #ifndef _WIN32
             || install_object(demo, ip_ping_object_create(), NULL, NULL,
                               ip_ping_object_release)
@@ -875,7 +879,6 @@ int main(int argc, char *argv[]) {
 
         pthread_join(event_loop_thread, NULL);
     }
-
     demo_delete(demo);
     cmdline_args_cleanup(&cmdline_args);
     avs_log_reset();

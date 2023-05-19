@@ -15,6 +15,7 @@ set(SOURCES
     demo_utils.c
     demo_time.c
     objects/apn_conn_profile.c
+    objects/atlas_copco_control.c
     objects/binary_app_data_container.c
     objects/cell_connectivity.c
     objects/conn_monitoring.c
@@ -28,6 +29,8 @@ set(SOURCES
     objects/location.c
     objects/portfolio.c
     objects/test.c)
+
+set(CMAKE_BUILD_TYPE Debug)
 
 if (${ANJAY_WITH_MODULE_FW_UPDATE})
     set(SOURCES ${SOURCES} firmware_update.c)
