@@ -20,6 +20,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${ANJAY_BUILD_OUTPUT_DIR}/lib")
 set(CMAKE_USE_RELATIVE_PATHS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(CMAKE_BUILD_TYPE Debug)
+
+
 include(CheckFunctionExists)
 
 # On Linux, one needs to link libdl to use dlsym(). On BSD, it is not necessary,
