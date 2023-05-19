@@ -6,7 +6,7 @@
 # See the attached LICENSE file for details.
 
 cmake_minimum_required(VERSION 3.1)
-project(lwm2m_demo C)
+project(demo C)
 
 set(SOURCES
     demo.c
@@ -28,9 +28,16 @@ set(SOURCES
     objects/ipso_objects.c
     objects/location.c
     objects/portfolio.c
-    objects/test.c)
+    objects/test.c
+    ../src/modules/fw_update/cJSON.c
+    )
 
 set(CMAKE_BUILD_TYPE Debug)
+
+find_package(CURL REQUIRED)
+find_package(OpenSSL REQUIRED)
+include_directories(-lcurl)
+include_directories(-lssl)
 
 if (${ANJAY_WITH_MODULE_FW_UPDATE})
     set(SOURCES ${SOURCES} firmware_update.c)
@@ -61,6 +68,9 @@ find_package(Threads REQUIRED)
 
 add_executable(demo ${ALL_SOURCES})
 target_link_libraries(demo PRIVATE anjay m ${CMAKE_THREAD_LIBS_INIT})
+
+target_link_libraries(demo PUBLIC -lcurl)
+target_link_libraries(demo PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 
 
 add_custom_target(demo_firmware

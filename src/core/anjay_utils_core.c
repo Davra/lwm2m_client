@@ -422,8 +422,15 @@ static const anjay_transport_info_t TRANSPORTS[] = {
         .uri_scheme = "coaps+nidd",
         .default_port = "",
         .security = ANJAY_TRANSPORT_ENCRYPTED
-    }
+    },
 #endif // ANJAY_WITH_LWM2M11
+    {
+        .transport = ANJAY_SOCKET_TRANSPORT_TCP,
+        .socket_type = &(const avs_net_socket_type_t) { AVS_NET_DTLS_SOCKET },
+        .uri_scheme = "https",
+        .default_port = "443",
+        .security = ANJAY_TRANSPORT_ENCRYPTED
+    },
 };
 
 const anjay_transport_info_t *

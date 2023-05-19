@@ -87,6 +87,318 @@ typedef struct fw_repr {
 #    endif // ANJAY_WITH_SEND
 } fw_repr_t;
 
+/***************************** Start of Davra Helpers **********************************/
+
+/**
+ * Updates the firmware state to indicate that the device is in the process of updating.
+ * 
+ * @param data A pointer to a firmware_data_t struct that contains firmware data.
+ * @return 0 if the update was successful.
+ */
+
+int firmware_update(fw_repr_t *fw)
+{
+    // TODO: Do the system specific (e.g. FX30 firmware update)
+    fw->state = 3; // Updating
+    return 0;
+}
+
+/**
+ * Calculates the MD5 checksum of the given file.
+ * @param filename the name of the file to calculate the checksum of
+ * @return a string of the MD5 checksum in hexadecimal format, or NULL if there was an error
+ */
+
+char *md5sum(const char *filename)
+{
+    unsigned char c[MD5_DIGEST_LENGTH];
+    char *md5_string = malloc(33);
+    if (md5_string == NULL)
+    {
+        return NULL;
+    }
+
+    MD5_CTX mdContext;
+    int bytes;
+    unsigned char data[1024];
+    FILE *inFile = fopen(filename, "rb");
+
+    if (inFile == NULL)
+    {
+        free(md5_string);
+        return NULL;
+    }
+
+    MD5_Init(&mdContext);
+    while ((bytes = fread(data, 1, 1024, inFile)) != 0)
+    {
+        MD5_Update(&mdContext, data, bytes);
+    }
+    MD5_Final(c, &mdContext);
+
+    for (int i = 0; i < MD5_DIGEST_LENGTH; ++i)
+    {
+        snprintf(&(md5_string[i * 2]), 33 - (i * 2), "%02x", (unsigned int)c[i]);
+    }
+
+    fclose(inFile);
+    return md5_string;
+}
+
+/**
+ * A libcurl callback function that writes received data to a file.
+ *
+ * This function is called by libcurl when there is data received that needs
+ * to be saved. It writes the received data to a provided file stream.
+ * 
+ * @param ptr A pointer to the received data.
+ * @param size The size of each data element (always 1).
+ * @param nmemb The number of data elements received.
+ * @param stream A pointer to the FILE where the data should be written.
+ * @return The number of bytes written, which should be the same as the number
+ *         of bytes received (size * nmemb). If the return value differs from
+ *         the received byte count, libcurl will treat it as an error and abort
+ *         the transfer.
+ *
+ * @see https://curl.se/libcurl/c/CURLOPT_WRITEFUNCTION.html
+ */
+
+size_t write_file_data(void *ptr, size_t size, size_t nmemb, FILE *stream)
+{
+    size_t written = fwrite(ptr, size, nmemb, stream);
+    return written;
+}
+
+/**
+ * A libcurl callback function that writes received data to a file.
+ * This function is called by libcurl as soon as there is data received that needs to be saved.
+ * The function writes the received data to the specified file and returns the number of bytes written.
+ * 
+ * @param ptr Pointer to the received data.
+ * @param size Size of each data element (always 1).
+ * @param nmemb Number of data elements.
+ * @param stream FILE pointer where the data should be written.
+ * @return The number of bytes written to the file.
+ */
+
+size_t write_file_metadata(void *ptr, size_t size, size_t nmemb, void *userdata)
+{
+    size_t realsize = size * nmemb;
+    strcat(userdata, ptr);
+    return realsize;
+}
+
+/**
+ * Removes the substring "/binary" from the given URL string and returns the result.
+ *
+ * @param url The input URL string to remove "/binary" from.
+ * @param result The output string to store the result in.
+ * @return True if "/binary" was found and removed from the URL, false otherwise.
+ */
+bool remove_binary(char *url, char *result)
+{
+    char *binary = strstr(url, "/binary");
+    if (binary)
+    {
+        strncpy(result, url, binary - url);
+        result[binary - url] = '\0';
+        return true;
+    }
+    return false;
+}
+
+
+/**
+ * Retrieves the expected MD5 checksum of a file from a given URI.
+ * 
+ * @param uri The URI of the file to retrieve the checksum for
+ * @param auth_header_with_token The authentication header with token for the request
+ * @return A pointer to the MD5 checksum string, or NULL in case of failure
+ *
+ * This function first removes the /binary part from the URI, if present.
+ * Then, it sends an HTTP request to the modified URI with the provided authentication header.
+ * The function parses the JSON response, extracting the MD5 checksum value, and returns it.
+ * If any memory allocation error occurs or if the MD5 value is not found in the JSON response, the function returns NULL.
+ */
+
+char *get_expected_checksum(char *uri, const char *auth_header_with_token)
+{
+    char *uri_copy;
+    // Allocate memory for uri_copy
+    uri_copy = (char *)malloc(strlen(uri) + 1);
+    if (uri_copy == NULL)
+    {
+        // Handle memory allocation error
+        printf("Memory allocation error. Stopping expected checksum retrieval.");
+        return NULL;
+    }
+    strncpy(uri_copy, uri, strlen(uri) + 1);
+
+    char *removed_binary_uri = (char *)malloc(strlen(uri_copy) + 1);
+    if (removed_binary_uri == NULL)
+    {
+        // Handle memory allocation error
+        printf("Memory allocation error. Stopping expected checksum retrieval.");
+        return NULL;
+    }
+    if (remove_binary(uri_copy, removed_binary_uri))
+    {
+        printf("%s\n", removed_binary_uri);
+    }
+    else
+    {
+        printf("No /binary found in the URL.\n");
+    }
+
+
+    CURL *curl;
+    char read_buffer[1024] = {0};
+    char *md5;
+    curl = curl_easy_init();
+    if(curl) {
+        CURLcode res;
+        struct curl_slist *headers = NULL;
+
+        curl_easy_setopt(curl, CURLOPT_URL, removed_binary_uri);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file_metadata);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, read_buffer);
+        headers = curl_slist_append(headers, auth_header_with_token);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        res = curl_easy_perform(curl);
+        printf("Request for MD5 checksum gave CUrlCode %d\n", res);
+        curl_easy_cleanup(curl);
+
+        cJSON *root = cJSON_Parse(read_buffer);
+        if (root) {
+            cJSON *md5_value = cJSON_GetObjectItem(root, "md5");
+            if (md5_value) {
+                md5 = md5_value->valuestring;
+                printf("MD5: %s\n", md5);
+            } else {
+                printf("Failed to find 'md5' value in JSON\n");
+            }
+            // cJSON_Delete(root); // Free memory
+        } else {
+            printf("Failed to parse JSON\n");
+        }
+    }
+    return md5;
+}
+
+/**
+ * @brief Downloads firmware and checks its checksum.
+ *
+ * This function downloads the firmware from the given URL and compares its
+ * checksum with the expected checksum. If the checksums match, the function
+ * returns 0 (success); otherwise, it returns 1 (checksum mismatch or other errors).
+ *
+ * @param data A pointer to a firmware_data_t structure containing information
+ *             about the firmware, including the URL and expected checksum.
+ * @return 0 if the firmware is successfully downloaded and the checksums match,
+ *         1 if there is a checksum mismatch or any error occurs during the process.
+ */
+
+int download_and_check_checksum(fw_repr_t* fw)
+{
+    CURL *curl;
+    CURLcode res;
+    const char *url = fw->package_uri;
+    const char *file_path = "downloaded_file.bin";
+    const char *auth_header_with_token =
+        "Authorization: Bearer CiDDjK8ZFbrSNrwO6zFobgNj4fZuRggR7coEmyv6Qp0wYJc0";
+    const char *expected_checksum;
+
+    expected_checksum = get_expected_checksum(
+        fw->package_uri, auth_header_with_token);
+    if (expected_checksum == NULL)
+    {
+        printf("Expected checksum retrieval failed. Check file endpoint and credentials.");
+        return 1;
+    }
+
+    curl = curl_easy_init();
+    if (!curl)
+    {
+        printf("CUrl initialization fail\n");
+        fw->result = 4;
+        return 1;
+    }
+
+    FILE *fp = fopen(file_path, "wb");
+    if (!fp)
+    {
+        curl_easy_cleanup(curl);
+        printf("File not found name %s\n", url);
+        return 1;
+    }
+
+    // Add bearer token header
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, auth_header_with_token);
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file_data);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+
+    res = curl_easy_perform(curl);
+    fclose(fp);
+    curl_easy_cleanup(curl);
+    curl_slist_free_all(headers); // Free the headers
+
+    if (res != CURLE_OK)
+    {
+        printf("Request error with CUrl error code: %d\n", res);
+        if (res == CURLE_URL_MALFORMAT)
+            fw->result = 7;
+        return 1;
+    }
+
+    fw->state = 2; // Downloaded
+
+    // Read the downloaded file and calculate its checksum
+    FILE *file = fopen(file_path, "rb");
+    if (!file)
+    {
+        printf("File not found or read error: %s\n", file_path);
+        return 1;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    unsigned char *buffer = (unsigned char *)malloc(file_size);
+    if (!buffer)
+    {
+        printf("Buffer initialization fail\n");
+        fclose(file);
+        return 1;
+    }
+
+    fread(buffer, 1, file_size, file);
+    fclose(file);
+
+    // TODO: Insert new comparison
+    char *calculated_md5_string = md5sum(file_path);
+    free(buffer);
+
+    printf("Checksum calculated: %s\nChecksum expected: %s\n",
+           calculated_md5_string, expected_checksum);
+
+    if (strcmp(calculated_md5_string, expected_checksum) == 0)
+    {
+        fw->result = 1;
+        return 0; // Success
+    }
+    else
+    {
+        fw->result = 6;
+        return 1; // Checksum mismatch
+    }
+}
+/***************************** End of Davra Helpers **********************************/
+
 static inline fw_repr_t *get_fw(const anjay_dm_installed_object_t obj_ptr) {
     return AVS_CONTAINER_OF(_anjay_dm_installed_object_get_unlocked(&obj_ptr),
                             fw_repr_t, def);
@@ -994,6 +1306,7 @@ static int fw_write(anjay_unlocked_t *anjay,
                        dl_res);
             }
             // write itself succeeded; do not propagate error
+
         }
 #    endif // ANJAY_WITH_DOWNLOADER
 
@@ -1070,33 +1383,44 @@ static int fw_execute(anjay_unlocked_t *anjay,
     (void) ctx;
 
     fw_repr_t *fw = get_fw(obj_ptr);
-    switch (rid) {
-    case FW_RES_UPDATE:
-        if (fw->state != UPDATE_STATE_DOWNLOADED) {
-            fw_log(WARNING,
-                   _("Firmware Update requested, but firmware not yet "
-                     "downloaded (state = ") "%d" _(")"),
-                   fw->state);
-            return ANJAY_ERR_METHOD_NOT_ALLOWED;
-        }
-        update_state_and_update_result(anjay, fw, UPDATE_STATE_UPDATING,
-                                       ANJAY_FW_UPDATE_RESULT_INITIAL);
-        // NOTE: This has to be called after update_state_and_update_result(),
-        // to make sure that schedule_upgrade() is called after notify_clb()
-        // and consequently, perform_upgrade() is called after trigger_observe()
-        // (if it's not delayed due to pmin).
-        if (AVS_SCHED_NOW(_anjay_get_scheduler_unlocked(anjay), &fw->update_job,
-                          schedule_upgrade, &fw, sizeof(fw))) {
-            fw_log(WARNING, _("Could not schedule the upgrade job"));
-            update_state_and_update_result(
-                    anjay, fw, UPDATE_STATE_DOWNLOADED,
-                    ANJAY_FW_UPDATE_RESULT_OUT_OF_MEMORY);
-            return ANJAY_ERR_INTERNAL;
-        }
-        return 0;
-    default:
-        return ANJAY_ERR_METHOD_NOT_ALLOWED;
-    }
+
+    // ! Using own implementation at this point
+    // trigger your firmware download and update logic
+    int download_and_checksum_result = download_and_check_checksum(fw);
+    int update_result = firmware_update(fw);
+    if (download_and_checksum_result == 0 && update_result == 0)
+        printf("Firmware update success\n");
+    else
+        printf("Firmware update failed\n");
+    fw->state = 0; // 0 =>
+
+    // switch (rid) {
+    // case FW_RES_UPDATE:
+    //     if (fw->state != UPDATE_STATE_DOWNLOADED) {
+    //         fw_log(WARNING,
+    //                _("Firmware Update requested, but firmware not yet "
+    //                  "downloaded (state = ") "%d" _(")"),
+    //                fw->state);
+    //         return ANJAY_ERR_METHOD_NOT_ALLOWED;
+    //     }
+    //     update_state_and_update_result(anjay, fw, UPDATE_STATE_UPDATING,
+    //                                    ANJAY_FW_UPDATE_RESULT_INITIAL);
+    //     // NOTE: This has to be called after update_state_and_update_result(),
+    //     // to make sure that schedule_upgrade() is called after notify_clb()
+    //     // and consequently, perform_upgrade() is called after trigger_observe()
+    //     // (if it's not delayed due to pmin).
+    //     if (AVS_SCHED_NOW(_anjay_get_scheduler_unlocked(anjay), &fw->update_job,
+    //                       schedule_upgrade, &fw, sizeof(fw))) {
+    //         fw_log(WARNING, _("Could not schedule the upgrade job"));
+    //         update_state_and_update_result(
+    //                 anjay, fw, UPDATE_STATE_DOWNLOADED,
+    //                 ANJAY_FW_UPDATE_RESULT_OUT_OF_MEMORY);
+    //         return ANJAY_ERR_INTERNAL;
+    //     }
+    //     return 0;
+    // default:
+    //     return ANJAY_ERR_METHOD_NOT_ALLOWED;
+    // }
 }
 
 static int fw_transaction_noop(anjay_unlocked_t *anjay,

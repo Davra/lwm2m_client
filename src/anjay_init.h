@@ -11,6 +11,17 @@
 #include <avsystem/coap/avs_coap_config.h>
 #include <avsystem/commons/avs_commons_config.h>
 
+/************************ Start of Davra Includes ***************************************/
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <openssl/md5.h>
+#include <curl/curl.h>
+#include "modules/fw_update/cJSON.h"
+/************************ End of Davra Includes *****************************************/
+
+
 // Checks for usage of removed configuration macros
 #ifdef ANJAY_WITH_MODULE_ATTR_STORAGE
 #    error "ANJAY_WITH_MODULE_ATTR_STORAGE has been removed since Anjay 3.0. Please update your anjay_config.h to use ANJAY_WITH_ATTR_STORAGE instead."
