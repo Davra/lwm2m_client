@@ -566,7 +566,7 @@ static int demo_init(anjay_demo_t *demo, cmdline_args_t *cmdline_args) {
             || install_object(demo, atlas_copco_control_object_create(),
                               NULL,
                               NULL,
-                              geopoints_object_release)
+                              atlas_copco_control_object_release)
 #ifndef _WIN32
             || install_object(demo, ip_ping_object_create(), NULL, NULL,
                               ip_ping_object_release)
