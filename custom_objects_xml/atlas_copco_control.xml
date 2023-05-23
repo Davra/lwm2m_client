@@ -6,7 +6,7 @@
         <ObjectID>9999</ObjectID>
         <ObjectURN></ObjectURN>
         <LWM2MVersion>1.0</LWM2MVersion>
-		<ObjectVersion>1.1</ObjectVersion>
+		<ObjectVersion>1.0</ObjectVersion>
         <MultipleInstances>Single</MultipleInstances>
         <Mandatory>Optional</Mandatory>
         <Resources>

@@ -25,6 +25,7 @@ typedef struct atlas_copco_control_object_struct {
     const anjay_dm_object_def_t *def;
 
     // TODO: object state
+    int32_t data_rate;
 } atlas_copco_control_object_t;
 
 static inline atlas_copco_control_object_t *
@@ -78,7 +79,7 @@ static int resource_read(anjay_t *anjay,
     switch (rid) {
     case RID_DATA_RATE:
         assert(riid == ANJAY_ID_INVALID);
-        return anjay_ret_i32(ctx, 0); // TODO
+        return anjay_ret_i32(ctx, (int32_t) obj->data_rate); // TODO
 
     default:
         return ANJAY_ERR_METHOD_NOT_ALLOWED;
@@ -102,7 +103,15 @@ static int resource_write(anjay_t *anjay,
     case RID_DATA_RATE: {
         assert(riid == ANJAY_ID_INVALID);
         int32_t value; // TODO
-        return anjay_get_i32(ctx, &value); // TODO
+        int result;
+        if ((result = anjay_get_i32(ctx, &value))) {
+            return result;
+        } else if (value < 0) {
+            return ANJAY_ERR_BAD_REQUEST;
+        }
+
+        obj->data_rate = (uint32_t) value;
+        return 0;
     }
 
     default:
