@@ -9,9 +9,12 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#include <anjay/lwm2m_send.h>
 #include <anjay/anjay.h>
 #include <avsystem/commons/avs_defs.h>
 #include <avsystem/commons/avs_memory.h>
+#include <avsystem/commons/avs_log.h>
+
 
 /**
  * Data Rate: RW, Single, Mandatory
@@ -157,4 +160,69 @@ void atlas_copco_control_object_release(const anjay_dm_object_def_t **def) {
 
         avs_free(obj);
     }
+}
+
+static void send_finished_handler(anjay_t *anjay,
+                                  anjay_ssid_t ssid,
+                                  const anjay_send_batch_t *batch,
+                                  int result,
+                                  void *data) {
+    (void) anjay;
+    (void) ssid;
+    (void) batch;
+    (void) data;
+
+    if (result != ANJAY_SEND_SUCCESS) {
+        avs_log(NULL, ERROR, "Send failed, result: %d", result);
+    } else {
+        avs_log(NULL, TRACE, "Send successful");
+    }
+}
+
+void atlas_copco_control_object_send(anjay_t *anjay, const anjay_dm_object_def_t **def) {
+    if (!anjay || !def) {
+        return;
+    }
+    atlas_copco_control_object_t *obj = get_obj(def);
+    const anjay_ssid_t server_ssid = 1;
+
+    // Allocate new batch builder.
+    anjay_send_batch_builder_t *builder = anjay_send_batch_builder_new();
+
+    if (!builder) {
+        avs_log(obj, ERROR, "Failed to allocate batch builder");
+        return;
+    }
+
+    int res = 0;
+
+    atlas_copco_control_object_t it;
+
+    // Add current values of resources from Time Object.
+    if (anjay_send_batch_data_add_current(builder, anjay, obj->def->oid,
+                                            0, RID_DATA_RATE)) {
+        anjay_send_batch_builder_cleanup(&builder);
+        avs_log(obj, ERROR, "Failed to add batch data, result: %d",
+                res);
+        return;
+    }
+
+    // After adding all values, compile our batch for sending.
+    anjay_send_batch_t *batch = anjay_send_batch_builder_compile(&builder);
+
+    if (!batch) {
+        anjay_send_batch_builder_cleanup(&builder);
+        avs_log(obj, ERROR, "Batch compile failed");
+        return;
+    }
+
+    // Schedule our send to be run on next `anjay_sched_run()` call.
+    res = anjay_send(anjay, server_ssid, batch, send_finished_handler, NULL);
+
+    if (res) {
+        avs_log(obj, ERROR, "Failed to send, result: %d", res);
+    }
+
+    // After scheduling, we can release our batch.
+    anjay_send_batch_release(&batch);
 }
