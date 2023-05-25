@@ -308,6 +308,12 @@ int download_and_check_checksum(fw_repr_t* fw)
         "Authorization: Bearer CiDDjK8ZFbrSNrwO6zFobgNj4fZuRggR7coEmyv6Qp0wYJc0";
     const char *expected_checksum;
 
+    if(!fw->package_uri)
+    {
+        printf("Expected checksum retrieval failed. Check file endpoint and credentials.");
+        return 1;
+    }
+
     expected_checksum = get_expected_checksum(
         fw->package_uri, auth_header_with_token);
     if (expected_checksum == NULL)
