@@ -8,6 +8,13 @@
  */
 #include <assert.h>
 #include <stdbool.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include <anjay/lwm2m_send.h>
 #include <anjay/anjay.h>
@@ -50,6 +57,8 @@ typedef struct atlas_copco_control_object_struct {
 
     // TODO: object state
     int32_t data_rate;
+    char *peripheral_ipv4_addr;
+    char *bash_command;
 } atlas_copco_control_object_t;
 
 static inline atlas_copco_control_object_t *
@@ -154,19 +163,75 @@ static int resource_write(anjay_t *anjay,
     case RID_PERIPHERAL_IPV4_ADDRESS: {
         assert(riid == ANJAY_ID_INVALID);
         char value[256]; // TODO
-        return anjay_get_string(ctx, value, sizeof(value)); // TODO
+        int result;
+        if(result = anjay_get_string(ctx, value, sizeof(value)))
+        {
+            return result;
+        }
+        else if (value == "" || value == NULL)
+        {
+            return ANJAY_ERR_BAD_REQUEST;
+        }
+        obj->peripheral_ipv4_addr = value;
     }
 
     case RID_BASH_COMMAND: {
         assert(riid == ANJAY_ID_INVALID);
         char value[256]; // TODO
-        return anjay_get_string(ctx, value, sizeof(value)); // TODO
+        int result;
+        if(result = anjay_get_string(ctx, value, sizeof(value)))
+        {
+            return result;
+        }
+        else if (value == "" || value == NULL)
+        {
+            return ANJAY_ERR_BAD_REQUEST;
+        }
+        obj->bash_command = value;
     }
 
     default:
         return ANJAY_ERR_METHOD_NOT_ALLOWED;
     }
 }
+
+int send_execute_command(char *bash_command, char *peripheral_ipv4_addr)
+{
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    char buffer[1024] = {0};
+
+    // Creating socket
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    // Converting IP address
+    if (inet_pton(AF_INET, peripheral_ipv4_addr, &serv_addr.sin_addr) <= 0) {
+        perror("Invalid address");
+        exit(EXIT_FAILURE);
+    }
+
+    // Connecting to server
+    if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("connect");
+        exit(EXIT_FAILURE);
+    }
+
+    // Sending message
+    send(sock, "Hello from client", strlen("Hello from client"), 0);
+
+    // Receiving response
+    read(sock, buffer, 1024);
+    printf("Server response: %s\n", buffer);
+
+    return 0;
+}
+
 
 static int resource_execute(anjay_t *anjay,
                             const anjay_dm_object_def_t *const *obj_ptr,
@@ -183,7 +248,8 @@ static int resource_execute(anjay_t *anjay,
 
     switch (rid) {
     case RID_BASH_EXECUTE:
-        return ANJAY_ERR_NOT_IMPLEMENTED; // TODO
+        send_execute_command(obj->bash_command, obj->peripheral_ipv4_addr);
+        return 0;// ANJAY_ERR_NOT_IMPLEMENTED; // TODO
 
     default:
         return ANJAY_ERR_METHOD_NOT_ALLOWED;
