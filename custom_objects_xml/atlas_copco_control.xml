@@ -31,6 +31,16 @@
                 <Description><![CDATA[The IPv4 address of the peripheral]]></Description>
             </Item>
             <Item ID="2">
+                <Name>Peripheral Port</Name>
+                <Operations>RW</Operations>
+                <MultipleInstances>Single</MultipleInstances>
+                <Mandatory>Mandatory</Mandatory>
+                <Type>String</Type>
+                <RangeEnumeration></RangeEnumeration>
+                <Units></Units>
+                <Description><![CDATA[The IPv4 address of the peripheral]]></Description>
+            </Item>
+            <Item ID="3">
                 <Name>BASH Command</Name>
                 <Operations>RW</Operations>
                 <MultipleInstances>Single</MultipleInstances>
@@ -40,7 +50,7 @@
                 <Units></Units>
                 <Description><![CDATA[The command to execute in the BASH Execute action]]></Description>
             </Item>
-            <Item ID="3">
+            <Item ID="4">
                 <Name>BASH Execute</Name>
                 <Operations>E</Operations>
                 <MultipleInstances>Single</MultipleInstances>
