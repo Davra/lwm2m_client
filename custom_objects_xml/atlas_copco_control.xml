@@ -20,6 +20,36 @@
                 <Units></Units>
                 <Description><![CDATA[The maximum data rate in commands per millisecond at which SEND commands can be executed.]]></Description>
             </Item>
+            <Item ID="1">
+                <Name>Peripheral IPv4 Address</Name>
+                <Operations>RW</Operations>
+                <MultipleInstances>Single</MultipleInstances>
+                <Mandatory>Mandatory</Mandatory>
+                <Type>String</Type>
+                <RangeEnumeration></RangeEnumeration>
+                <Units></Units>
+                <Description><![CDATA[The IPv4 address of the peripheral]]></Description>
+            </Item>
+            <Item ID="2">
+                <Name>BASH Command</Name>
+                <Operations>RW</Operations>
+                <MultipleInstances>Single</MultipleInstances>
+                <Mandatory>Mandatory</Mandatory>
+                <Type>String</Type>
+                <RangeEnumeration></RangeEnumeration>
+                <Units></Units>
+                <Description><![CDATA[The command to execute in the BASH Execute action]]></Description>
+            </Item>
+            <Item ID="3">
+                <Name>BASH Execute</Name>
+                <Operations>E</Operations>
+                <MultipleInstances>Single</MultipleInstances>
+                <Mandatory>Mandatory</Mandatory>
+                <Type>String</Type>
+                <RangeEnumeration></RangeEnumeration>
+                <Units></Units>
+                <Description><![CDATA[The BASH Execute action defined from the BASH Command string]]></Description>
+            </Item>
         </Resources>
         <Description2></Description2>
     </Object>

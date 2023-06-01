@@ -305,7 +305,7 @@ int download_and_check_checksum(fw_repr_t* fw)
     const char *url = fw->package_uri;
     const char *file_path = "downloaded_file.bin";
     const char *auth_header_with_token =
-        "Authorization: Bearer CiDDjK8ZFbrSNrwO6zFobgNj4fZuRggR7coEmyv6Qp0wYJc0";
+        "Authorization: Bearer EwZ4PikkPDjAoE6ob0PAv3Df2I5754JqQrYHr9VavMBFgk7M";
     const char *expected_checksum;
 
     if(!fw->package_uri)
