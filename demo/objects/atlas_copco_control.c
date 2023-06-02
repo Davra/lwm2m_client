@@ -295,9 +295,10 @@ static int resource_execute(anjay_t *anjay,
     switch (rid)
     {
     case RID_BASH_EXECUTE:
+    {
         int result = send_execute_command(
             obj->bash_command, obj->peripheral_ipv4_addr, obj->peripheral_port);
-        if(result == 0)
+        if (result == 0)
         {
             return ANJAY_SEND_OK;
         }
@@ -305,6 +306,7 @@ static int resource_execute(anjay_t *anjay,
         {
             return ANJAY_ERR_NOT_ACCEPTABLE;
         }
+    }
 
     default:
         return ANJAY_ERR_METHOD_NOT_ALLOWED;

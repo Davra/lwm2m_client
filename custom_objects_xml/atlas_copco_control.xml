@@ -5,8 +5,8 @@
         <Description1><![CDATA[Various control parameters for Atlas Copco.]]></Description1>
         <ObjectID>9999</ObjectID>
         <ObjectURN></ObjectURN>
-        <LWM2MVersion>1.0</LWM2MVersion>
-		<ObjectVersion>1.0</ObjectVersion>
+        <LWM2MVersion>1.1</LWM2MVersion>
+		<ObjectVersion>1.1</ObjectVersion>
         <MultipleInstances>Single</MultipleInstances>
         <Mandatory>Optional</Mandatory>
         <Resources>
