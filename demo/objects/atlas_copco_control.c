@@ -248,7 +248,7 @@ int send_execute_command(char *bash_command, char *peripheral_ipv4_addr, char *p
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("socket");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     serv_addr.sin_family = AF_INET;
@@ -258,18 +258,18 @@ int send_execute_command(char *bash_command, char *peripheral_ipv4_addr, char *p
     if (inet_pton(AF_INET, peripheral_ipv4_addr, &serv_addr.sin_addr) <= 0)
     {
         perror("Invalid address");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     // Connecting to server
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         perror("connect");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     // Sending message
-    send(sock, "Hello from client", strlen("Hello from client"), 0);
+    send(sock, bash_command, strlen(bash_command), 0);
 
     // Receiving response
     read(sock, buffer, 1024);
@@ -295,9 +295,16 @@ static int resource_execute(anjay_t *anjay,
     switch (rid)
     {
     case RID_BASH_EXECUTE:
-        send_execute_command(
+        int result = send_execute_command(
             obj->bash_command, obj->peripheral_ipv4_addr, obj->peripheral_port);
-        return 0; // ANJAY_ERR_NOT_IMPLEMENTED; // TODO
+        if(result == 0)
+        {
+            return ANJAY_SEND_OK;
+        }
+        else
+        {
+            return ANJAY_ERR_NOT_ACCEPTABLE;
+        }
 
     default:
         return ANJAY_ERR_METHOD_NOT_ALLOWED;
