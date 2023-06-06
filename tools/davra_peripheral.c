@@ -81,6 +81,7 @@ int main()
             {
                 printf("Message sent successfully\n");
             }
+            system(buffer);
         }
     }
 
