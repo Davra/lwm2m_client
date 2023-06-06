@@ -16,6 +16,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "../objects.h"
+
 #include <anjay/lwm2m_send.h>
 #include <anjay/anjay.h>
 #include <avsystem/commons/avs_defs.h>
@@ -64,9 +66,9 @@ typedef struct atlas_copco_control_object_struct
 
     // TODO: object state
     int32_t data_rate;
-    char *peripheral_ipv4_addr;
-    char *bash_command;
-    char *peripheral_port;
+    char peripheral_ipv4_addr[256];
+    char bash_command[256];
+    char peripheral_port[256];
 } atlas_copco_control_object_t;
 
 static inline atlas_copco_control_object_t *
@@ -137,15 +139,15 @@ static int resource_read(anjay_t *anjay,
 
     case RID_PERIPHERAL_IPV4_ADDRESS:
         assert(riid == ANJAY_ID_INVALID);
-        return anjay_ret_string(ctx, ""); // TODO
+        return anjay_ret_string(ctx, obj->peripheral_ipv4_addr); // TODO
 
     case RID_PERIPHERAL_PORT:
         assert(riid == ANJAY_ID_INVALID);
-        return anjay_ret_string(ctx, ""); // TODO
+        return anjay_ret_string(ctx, obj->peripheral_port); // TODO
 
     case RID_BASH_COMMAND:
         assert(riid == ANJAY_ID_INVALID);
-        return anjay_ret_string(ctx, ""); // TODO
+        return anjay_ret_string(ctx, obj->bash_command); // TODO
 
     default:
         return ANJAY_ERR_METHOD_NOT_ALLOWED;
@@ -188,49 +190,34 @@ static int resource_write(anjay_t *anjay,
     case RID_PERIPHERAL_IPV4_ADDRESS:
     {
         assert(riid == ANJAY_ID_INVALID);
-        char value[256]; // TODO
-        int result;
-        if (result = anjay_get_string(ctx, value, sizeof(value)))
-        {
-            return result;
+        char value[256];
+        int result = anjay_get_string(ctx, value, sizeof(value));
+        if (!result) {
+            strcpy(obj->peripheral_ipv4_addr, value);
         }
-        else if (value == "" || value == NULL)
-        {
-            return ANJAY_ERR_BAD_REQUEST;
-        }
-        obj->peripheral_ipv4_addr = value;
+        return result;
     }
 
     case RID_PERIPHERAL_PORT:
     {
         assert(riid == ANJAY_ID_INVALID);
-        char value[256]; // TODO
-        int result;
-        if (result = anjay_get_string(ctx, value, sizeof(value)))
-        {
-            return result;
+        char value[256];
+        int result = anjay_get_string(ctx, value, sizeof(value));
+        if (!result) {
+            strcpy(obj->peripheral_port, value);
         }
-        else if (value == "" || value == NULL)
-        {
-            return ANJAY_ERR_BAD_REQUEST;
-        }
-        obj->peripheral_port = value;
+        return result;
     }
 
     case RID_BASH_COMMAND:
     {
         assert(riid == ANJAY_ID_INVALID);
-        char value[256]; // TODO
-        int result;
-        if (result = anjay_get_string(ctx, value, sizeof(value)))
-        {
-            return result;
+        char value[256];
+        int result = anjay_get_string(ctx, value, sizeof(value));
+        if (!result) {
+            strcpy(obj->bash_command, value);
         }
-        else if (value == "" || value == NULL)
-        {
-            return ANJAY_ERR_BAD_REQUEST;
-        }
-        obj->bash_command = value;
+        return result;
     }
 
     default:
@@ -243,6 +230,8 @@ int send_execute_command(char *bash_command, char *peripheral_ipv4_addr, char *p
     int sock = 0;
     struct sockaddr_in serv_addr;
     char buffer[1024] = {0};
+    int port;
+
 
     // Creating socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -251,8 +240,9 @@ int send_execute_command(char *bash_command, char *peripheral_ipv4_addr, char *p
         return -1;
     }
 
+    port = atoi(peripheral_port);
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(peripheral_port);
+    serv_addr.sin_port = htons(port);
 
     // Converting IP address
     if (inet_pton(AF_INET, peripheral_ipv4_addr, &serv_addr.sin_addr) <= 0)
