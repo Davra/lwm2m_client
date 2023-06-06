@@ -15,6 +15,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "../objects.h"
 
@@ -252,9 +253,11 @@ int send_execute_command(char *bash_command, char *peripheral_ipv4_addr, char *p
     }
 
     // Connecting to server
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    int connect_result = connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+    if (connect_result < 0)
     {
         perror("connect");
+        printf("Error: %s\n", strerror(errno));
         return -1;
     }
 
